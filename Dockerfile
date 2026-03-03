@@ -4,13 +4,12 @@ COPY package.json ./
 RUN npm install --frozen-lockfile || npm install
 COPY client ./client
 COPY shared ./shared
-COPY script ./script
 COPY vite.config.ts ./
 COPY tsconfig.json ./
 COPY tailwind.config.ts ./
 COPY postcss.config.js ./
 COPY components.json ./
-RUN npm run build
+RUN npx vite build
 
 FROM golang:1.25-alpine AS go-builder
 WORKDIR /app
