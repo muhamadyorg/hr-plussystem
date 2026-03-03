@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hrplus-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hrplus_db}
+      POSTGRES_USER: ${POSTGRES_USER:-hrplus_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hrplus_secret}
+    volumes:
+      - hrplus_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - hrplus_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hrplus_user} -d ${POSTGRES_DB:-hrplus_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: hrplus-app
+    environment:
+      PORT: "5000"
+      DATABASE_URL: postgres://${POSTGRES_USER:-hrplus_user}:${POSTGRES_PASSWORD:-hrplus_secret}@postgres:5432/${POSTGRES_DB:-hrplus_db}?sslmode=disable
+      SESSION_SECRET: ${SESSION_SECRET:-change_this_secret_in_production}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - hrplus_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: hrplus-nginx
+    ports:
+      - "${APP_PORT:-8182}:80"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - hrplus_network
+
+volumes:
+  hrplus_postgres_data:
+
+networks:
+  hrplus_network:
+    driver: bridge
