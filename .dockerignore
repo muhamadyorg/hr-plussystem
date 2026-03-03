@@ -1,0 +1,11 @@
+.git
+.gitignore
+node_modules
+dist
+*.md
+.env
+.env.*
+!.env.example
+.replit
+replit.nix
+attached_assets
